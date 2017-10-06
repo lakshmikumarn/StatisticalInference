@@ -1,0 +1,86 @@
+---
+title: "Statistical Inference Project - Part 2"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning=FALSE, message=FALSE)
+library(data.table)
+library(ggplot2)
+
+```
+
+## Overview:
+The ToothGrowth data has 60 observations that capture length of the tooth *(len)*, supply methods *(Orange Juice- OJ or Vitamin C - VC )*, and dosage *(0.5,1,2 mg)*. The objective of this report is to do exploratory analysis on this data set and derive conclusions on the probably correlation or impact of supply methods or dosage of each method over the length of the tooth.
+
+## Loading and Exploratory analysis :
+load data ToothGrowth and create a data table for ease of subsetting etc.
+Taking a summary of the data we observe that there are two types in supp and 4 levels for dose and against each there are about 10 observations each for length of tooth as seen in the table output below summary details.
+
+``` {r message= FALSE , warning=FALSE}
+data(ToothGrowth)
+
+dt <- data.table(ToothGrowth)
+dt[which(dt[, len > (max(len)-5)]), ] # Look at top 5 length records 
+summary(dt)
+table(dt$supp, dt$dose)
+```
+
+
+## Cursory analysis:
+Let us also plot length of tooth using dose as a predictor by supply methods. 
+
+```{r message= FALSE , warning=FALSE}
+with(dt, qplot(dose,len, colour=supp) )
+
+ag <- aggregate(dt$len, by = list(dt$supp), mean) # aggregate mean grouped by supp
+ag2 <- aggregate(dt$len, by = list(dt$dose,dt$supp), mean) # aggregate mean grouped by dose and supp. 
+
+print(ag)
+print(ag2)
+
+```
+
+From the figure above, it is evident that
+
+1. At lower doses OJ seems to have more impact on the length compared to VC but at 2 mg doese, VC overtakes by having to contribute for maximum length in teh given dataset. While this cannot be a conclusion, given the information / data this is the behaviour it is observed.
+
+2. There is  no strong correlation of relationship/correlation between dose and length given the supp type.
+
+Let us evaluate the predictability of the variables *doese vs supp* over the outcome (length) by taking mean grouped by different predictors. Difference between means of length when grouped by supp or when grouped by *dose, supp*. At a high glance, there is not much that we can conclude. The objective was to see if the computed mean is same for both the groups to see which variable has more influence on the predictability on length. Hence, it is valuable to perform hypothesis testing using T distribution tests on the dataset grouped by either supp or by dose and supp.
+
+## T Distribution Analysis to evaluate Hypothesis Testing, Confidence Interval and p-Value:
+
+First we evaluate the relation between two groups of len by supp methods running a *t.test*.
+
+```{r message= FALSE , warning=FALSE}
+t.test(dt$len[dt$supp=="OJ"], dt$len[dt$supp=="VC"], paired = FALSE )
+
+```
+
+Note that p-Value is greater than the level of significance (.05). Which means that mean of both the groups are not same but more than that given that the confidence interval includes 0 and pValue > significance level, it is **not statistical significant and hence we fail to reject *null* hypothesis**, which in our case means that both means are close and same and have not very significant influence on the the length, given the data set..
+
+We then run t tests for various combination of two groups of doses over the len outcome variable. In all the t-tests, we consistently find that pValue is 0 (rounded) and confidence interval does not include the mean. Hence, it is **statistically significant and hence reject the null hypothesis**, which in our case means that the dosage have considerable impact on the length of tooth, given the data set.
+
+```{r message= FALSE , warning=FALSE}
+
+t.test(dt$len[dt$dose== 0.5], dt$len[dt$dose== 1], paired = FALSE )
+
+t.test(dt$len[dt$dose== 1], dt$len[dt$dose== 2], paired = FALSE )
+
+t.test(dt$len[dt$dose== 0.5], dt$len[dt$dose== 2], paired = FALSE )
+
+```
+
+## Conclusion:
+
+From the statistical significance for different sets of variables, it is evident that the mean for both the groups are different when grouped by supp or dose, but statistical significance shows marked difference when run toward *dose*. Hence, it is safer to conclude **(subject to the key assumptions listed below)** that *dose* have more impact on the length of the tooth compared to sheer influence of *supp OJ versus VC*. 
+
+**Assumptions:** considered here  to draw conclusion are: 
+
+1. Though the dataset has 60 observations which is very small to decide the influence of predictors on the outcome, it is assumed to be a good representaton of the population.
+
+2. Popullation will not be too skewed due to external influences on which there will be no control.
+
+
+
